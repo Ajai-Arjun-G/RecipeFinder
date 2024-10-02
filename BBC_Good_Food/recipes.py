@@ -90,3 +90,8 @@ class recipes(webdriver.Chrome):
         ingredients = element.text
         print(ingredients.split('\n'))
 
+    def Instructions(self):
+        element = self.find_element_by_class_name('grouped-list__list')
+        instructions = element.text
+        print(instructions)
+
