@@ -8,3 +8,4 @@ with recipes() as bot:
     bot.landingPage()
     bot.CookiesPopUp()
     bot.Ingredients()
+    bot.Instructions()
