@@ -2,6 +2,7 @@ import BBC_Good_Food
 import BBC_Good_Food.recipes
 import CookWithManali
 import CookWithManali.recipes
+import CookWithManali.constants
 
 #Creating a sample instance
 # inst = NDTV_News()
@@ -10,7 +11,7 @@ import CookWithManali.recipes
 def ExtractBBCGoodFood():
 
     # With block will automatically call on a exit method once done executing, 
-    # so we have to define one for sure if we want to use with in our code.
+    # So we have to define one for sure if we want to use with in our code.
     with BBC_Good_Food.recipes.recipes() as bot:
         bot.landingPage()
         bot.CookiesPopUp()
@@ -22,5 +23,5 @@ def ExtractCookWithManali():
         bot.landingPage()
         bot.Browse()
 
-
 ExtractCookWithManali()
+print(CookWithManali.recipes.recipes().all_recipes)
