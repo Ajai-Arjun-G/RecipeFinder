@@ -12,7 +12,6 @@ from selenium.common.exceptions import TimeoutException
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="rdflib.term")
 
-
 class recipes(webdriver.Chrome):
     
     disallowedPaths = [
@@ -84,25 +83,42 @@ class recipes(webdriver.Chrome):
     def queryOntology(self, ingredients):
         # Suppress specific rdflib warnings
         warnings.filterwarnings("ignore", category=UserWarning, module="rdflib.term")
-        tags = []
+
+        tags = set()  # Using set directly for deduplication
+        stopWords = set(['ml', 'inch', 'large', 'grams', 'medium', 'tablespoon', 'teaspoon', 
+                        'cup', 'gram', 'heat', 'variety', 'wedge', 'oz', 'end', 'top', 
+                        'recipe', 'minute', 'piece', 'half', 'purpose', 'flavor', 
+                        'food', 'min','choice','cube'])
+        
+        sentences = []
+        for sentence in ingredients:
+            words = sentence.split()
+            filtered = []
+            for word in words:
+                if word.lower() not in stopWords:  # Convert word to lowercase for consistency
+                    filtered.append(word)
+            filtered_sentence = ' '.join(filtered)
+            sentences.append(filtered_sentence)
+
+        ingredients = sentences  # Update ingredients with filtered sentences
 
         for element in ingredients:
-            doc = nlp(element)
+            doc = nlp(element)  # Use spaCy to process the sentence
 
             # Collect pairs of nouns and standalone nouns
             i = 0
             extracted_nouns = []
 
             while i < len(doc):
-                if doc[i].pos_ == 'NOUN':
+                if doc[i].pos_ == 'NOUN' and doc[i].lemma_.lower() not in stopWords:
                     # Check if the next token is also a noun for multi-word pairing
-                    if i + 1 < len(doc) and doc[i + 1].pos_ == 'NOUN':
-                        # Form a pair and add it to the extracted nouns
+                    if i + 1 < len(doc) and doc[i + 1].pos_ == 'NOUN' and doc[i + 1].lemma_.lower() not in stopWords:
+                        # Form a noun pair and add it to the extracted nouns
                         noun_pair = f"{doc[i].lemma_.lower()} {doc[i + 1].lemma_.lower()}"
                         extracted_nouns.append(noun_pair)
                         i += 2  # Skip the next noun since it's already paired
                     else:
-                        # Add the standalone noun
+                        # Add standalone noun
                         extracted_nouns.append(doc[i].lemma_.lower())
                         i += 1
                 else:
@@ -110,7 +126,7 @@ class recipes(webdriver.Chrome):
 
             # Remove duplicates by converting to a set, then back to a list
             extracted_nouns = set(extracted_nouns)
-            print(extracted_nouns)
+            print(extracted_nouns)  # Debugging or logging extracted nouns
 
             # Query the ontology for the identified nouns
             for each in extracted_nouns:
@@ -143,13 +159,13 @@ class recipes(webdriver.Chrome):
                         """
                         individual_results = g.query(individual_query)
                         if len(individual_results) > 0:
-                            tags.append(individual)
+                            tags.add(individual)  # Add valid individual nouns
 
                 # If matches were found for the multi-word noun, add it to the tags
                 if len(results) > 0:
-                    tags.append(each)
+                    tags.add(each)
 
-        return list(set(tags))
+        return list(tags)  # Convert set to list for the final output
 
     
     def Browse(self):
@@ -244,12 +260,12 @@ class recipes(webdriver.Chrome):
             return {"prep_time": prepTime, "cook_time": cookTime, "total_time": totalTime}
 
     def Ingredients(self):
-        Setingredients = set()
         ingredients = self.get_element_text(By.CLASS_NAME, 'wprm-recipe-ingredients')
         ingredients = ingredients.split('\n')
         if ingredients:
             ingredients = [ingredient for ingredient in ingredients if ingredient.strip() != '▢']
             return ingredients
+        
 
     def Instructions(self):
         instructions = self.get_element_text(By.CLASS_NAME, 'wprm-recipe-instructions')
